@@ -384,7 +384,7 @@
         // put headers above data, if there is room
         let insertedHeaders = false
         if (app.insertHeaders) {
-          const headers = [(model === 'companies' ? 'Domain' : 'Email'), 'customer_fit', 'customer_fit_score', 'top_signal']
+          const headers = [(model === 'companies' ? 'Domain' : 'Email'), 'customer_fit', 'customer_fit_score', 'customer_fit_signals']
           insertedHeaders = await run('createRowHeaders', app.activeSheet, selection.row, selection.column, headers)
         }
         // start predictions for all domains
