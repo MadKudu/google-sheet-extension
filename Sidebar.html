@@ -391,11 +391,11 @@
         for (let domainIndex = 0; domainIndex < domainOrEmails.length; domainIndex++) {
           const domainOrEmail = domainOrEmails[domainIndex]
           const res = await getCustomerFitPrediction(domainOrEmail, model)
-          console.log("here customer fit prediction " + JSON.stringify(res.properties.customer_fit.top_signals));
+          console.log("customer fit: " + JSON.stringify(res.properties.customer_fit));
           const row = selection.row + domainIndex + (insertedHeaders ? 1 : 0)
           // write prediction to the sheet
           const top_signals = res.properties.customer_fit.top_signals_formatted
-          console.log("here are the top signal " + JSON.stringify(top_signals), row, selection.column + 3, top_signals)
+//           console.log("here are the top signal " + JSON.stringify(top_signals), row, selection.column + 3, top_signals)
           const batch = []
           if (res.properties && res.properties.customer_fit) {
             const customerFit = res.properties.customer_fit
