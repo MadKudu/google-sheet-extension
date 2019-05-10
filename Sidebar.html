@@ -378,26 +378,30 @@
         app.isLoading = true
         const model = app.customerFitModel // either "companies" or "persons"
         const selection = await run('getActiveSelection', app.activeSheet)
-        console.log(selection.values)
+        console.log("what are the value" + selection.values, selection)
         domainOrEmails = selection.values.map(c => c[0]) // map to array of the first value of each row
         app.totalAmountToLoad = domainOrEmails.length
         // put headers above data, if there is room
         let insertedHeaders = false
         if (app.insertHeaders) {
-          const headers = [(model === 'companies' ? 'Domain' : 'Email'), 'customer_fit', 'customer_fit_score']
+          const headers = [(model === 'companies' ? 'Domain' : 'Email'), 'customer_fit', 'customer_fit_score', 'top_signal']
           insertedHeaders = await run('createRowHeaders', app.activeSheet, selection.row, selection.column, headers)
         }
         // start predictions for all domains
         for (let domainIndex = 0; domainIndex < domainOrEmails.length; domainIndex++) {
           const domainOrEmail = domainOrEmails[domainIndex]
           const res = await getCustomerFitPrediction(domainOrEmail, model)
+          console.log("here customer fit prediction " + JSON.stringify(res.properties.customer_fit.top_signals));
           const row = selection.row + domainIndex + (insertedHeaders ? 1 : 0)
           // write prediction to the sheet
+          const top_signals = res.properties.customer_fit.top_signals_formatted
+          console.log("here are the top signal " + JSON.stringify(top_signals), row, selection.column + 3, top_signals)
           const batch = []
           if (res.properties && res.properties.customer_fit) {
             const customerFit = res.properties.customer_fit
             batch.push({ row, col: selection.column + 1, val: customerFit.segment })
             batch.push({ row, col: selection.column + 2, val: customerFit.score })
+            batch.push({ row, col: selection.column + 3, val: top_signals })
           } else if (res.error) {
             batch.push({ row, col: selection.column + 1, val: 'Error - ' + res.status + ' ' + res.message })
             batch.push({ row, col: selection.column + 2, val: 'Error - ' + res.status + ' ' + res.message })
