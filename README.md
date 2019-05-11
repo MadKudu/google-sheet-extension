@@ -1,6 +1,6 @@
 # MadKudu Google Sheet Extension
 
+Zip the manifest.json
 ```
-mkdir dist/
-cp -r lib dist/
-cd dist ; zip -r app.zip . --exclude=./app.zip
+make
+```
