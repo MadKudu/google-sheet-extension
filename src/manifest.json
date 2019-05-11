@@ -1,0 +1,12 @@
+{
+    "name": "MadKudu",
+    "description": "Score your leads via email addresses or domains so that you can prioritize who to talk to.",
+    "default_locale": "en",
+    "version": "2.0.0",
+    "manifest_version": 2,
+    "icons": {
+      "128": "icon_128.png"
+    },
+    "app": {
+    }
+  }
