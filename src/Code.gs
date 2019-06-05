@@ -117,9 +117,8 @@ function getError500() {
 
 function parseApiResults (res) {
   const status = res.getResponseCode();
-  console.log(status);
   const body = res.getContentText();
-  console.log(body);
+  console.log(status + ' ' + body);
   var parsedRes = {};
   try {
     parsedRes = JSON.parse(body);
@@ -130,7 +129,7 @@ function parseApiResults (res) {
     parsedRes = { message: 'An unexpected error occured, please retry this record', status: 500, error: true }
   }
   if (parsedRes.error) {
-    console.log('error', parsedRes);
+    console.error('error', parsedRes);
   }
   return parsedRes;
 }
@@ -182,6 +181,7 @@ function getCustomerFitPrediction(domainOrEmail, model) {
     const res = UrlFetchApp.fetch(url, params);
     return parseApiResults(res);
   } catch (err) {
+    console.error('timeout', err);
     return getError500()
   }
 }
