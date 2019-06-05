@@ -60,8 +60,7 @@
         cursor: pointer;
         text-decoration: underline;
         text-decoration-style: dotted;
-      }
-      
+      } 
     </style>
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
     <script src="https://unpkg.com/vue-multiselect@2.1.0"></script>
@@ -69,7 +68,6 @@
   </head>
   <body>
     <div id="app">
-    
       <div style="height: 4px; background-color: #448aff"></div>
       
       <template v-if="apiKey">
@@ -259,40 +257,6 @@
         return result;
       }
       
-      function showErrorDialog(res, parsedRes, helpTip) {
-        run('error', res.status, res.statusText, parsedRes.message, helpTip);
-      }
-      
-      function checkErrorsAndShowDialog(res, parsedRes) {
-        if (res.status >= 400) {
-          showErrorDialog(res, parsedRes, parsedRes.message)
-          app.loading = false
-        }
-      }
-      
-      /**
-       * Fetches a topical prediction for a given domain
-       */
-      async function getPrediction(domain, modelId) {
-        domain = domain.replace(/https?:\/\/(www\.)?/, '') // trim http and www
-        const res = await fetch(apiUrl + 'models/' + modelId + '/predictions', {
-          method: 'post',
-          headers: new Headers({
-            'Authorization': 'Basic '+app.apiKey,
-            'content-type': 'application/json'
-          }),
-          body: JSON.stringify({ domain, 'show_scores': true })
-        })
-        // alert error codes
-        const parsedRes = await res.json()
-        if (res.status >= 400) {
-          parsedRes.error = true
-          parsedRes.status = res.status
-        }
-        // checkErrorsAndShowDialog(res, parsedRes) commenting out in favor of printing error to sheet
-        return parsedRes
-      }
-      
       async function runTopicalPrediction() {
         app.activeSheet = await run('getActiveSheet')
         app.isLoading = true
@@ -316,7 +280,7 @@
           const domain = domains[domainIndex]
           for (let modelIndex = 0; modelIndex < selectedModels.length; modelIndex++) {
             const model = selectedModels[modelIndex]
-            const res = await getPrediction(domain, model.id)
+            const res = await run('getTopicalPrediction', domain, model.id)
             const result = {
               domain,
               modelId: model.id,
@@ -351,63 +315,43 @@
         resetCounter()
       }
       
-      async function getCustomerFitPrediction(domainOrEmail, model) {
-        const paramKey = (model === 'companies' ? 'domain' : 'email')
-        if (paramKey === 'domain') {
-          domainOrEmail = domainOrEmail.replace(/https?:\/\/(www\.)?/, '') // trim http and www
-        }
-        console.log(domainOrEmail)
-        const url = apiUrl + model + '?' + paramKey + '=' + domainOrEmail
-        const res = await fetch(url, {
-          method: 'get',
-          headers: new Headers({
-            'Authorization': 'Basic '+app.apiKey,
-          })
-        })
-        // alert for error codes
-        const parsedRes = await res.json()
-        if (res.status >= 400) {
-          parsedRes.error = true
-          parsedRes.status = res.status
-        }
-        return parsedRes
-      }
-      
       async function runCustomerFitPrediction() {
-        app.activeSheet = await run('getActiveSheet')
-        app.isLoading = true
-        const model = app.customerFitModel // either "companies" or "persons"
-        const selection = await run('getActiveSelection', app.activeSheet)
-        console.log("what are the value" + selection.values, selection)
-        domainOrEmails = selection.values.map(c => c[0]) // map to array of the first value of each row
-        app.totalAmountToLoad = domainOrEmails.length
+        app.activeSheet = await run('getActiveSheet');
+        app.isLoading = true;
+        const model = app.customerFitModel; // either "companies" or "persons"
+        const selection = await run('getActiveSelection', app.activeSheet);
+        domainOrEmails = selection.values.map(c => c[0]); // map to array of the first value of each row
+        app.totalAmountToLoad = domainOrEmails.length;
+        console.log('selection length: ' + app.totalAmountToLoad);
+
         // put headers above data, if there is room
         let insertedHeaders = false
         if (app.insertHeaders) {
           const headers = [(model === 'companies' ? 'Domain' : 'Email'), 'customer_fit', 'customer_fit_score', 'customer_fit_signals']
           insertedHeaders = await run('createRowHeaders', app.activeSheet, selection.row, selection.column, headers)
         }
+
         // start predictions for all domains
-        for (let domainIndex = 0; domainIndex < domainOrEmails.length; domainIndex++) {
+        for (let domainIndex = 0; domainIndex < domainOrEmails.length; domainIndex += 1) {
           const domainOrEmail = domainOrEmails[domainIndex]
-          const res = await getCustomerFitPrediction(domainOrEmail, model)
-          console.log("customer fit: " + JSON.stringify(res.properties.customer_fit));
-          const row = selection.row + domainIndex + (insertedHeaders ? 1 : 0)
+          console.log('domainOrEmail', domainOrEmail);
+          const res = await run('getCustomerFitPrediction', domainOrEmail, model);
+          console.log('raw results', res);
+          const row = selection.row + domainIndex + (insertedHeaders ? 1 : 0);
+          
           // write prediction to the sheet
-          const top_signals = res.properties.customer_fit.top_signals_formatted
-//           console.log("here are the top signal " + JSON.stringify(top_signals), row, selection.column + 3, top_signals)
           const batch = []
           if (res.properties && res.properties.customer_fit) {
             const customerFit = res.properties.customer_fit
             batch.push({ row, col: selection.column + 1, val: customerFit.segment })
             batch.push({ row, col: selection.column + 2, val: customerFit.score })
-            batch.push({ row, col: selection.column + 3, val: top_signals })
+            batch.push({ row, col: selection.column + 3, val: customerFit.top_signals_formatted })
           } else if (res.error) {
             batch.push({ row, col: selection.column + 1, val: 'Error - ' + res.status + ' ' + res.message })
             batch.push({ row, col: selection.column + 2, val: 'Error - ' + res.status + ' ' + res.message })
           }
           await run('setCells', app.activeSheet, batch)
-          app.currentAmountLoaded++
+          app.currentAmountLoaded += 1
         }
         app.isLoading = false
         resetCounter()
@@ -423,7 +367,6 @@
             runCustomerFitPrediction()
             break
           default:
-            // invalid tab
             break
         }
       }
