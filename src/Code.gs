@@ -107,12 +107,19 @@ function getUserProperty(key) {
   return userProperties.getProperty(key);
 }
 
+function getError500() {
+  return { 
+    message: 'An unexpected error occured, please retry this record', 
+    status: 500, 
+    error: true 
+  }
+}
+
 function parseApiResults (res) {
   const status = res.getResponseCode();
   console.log(status);
   const body = res.getContentText();
   console.log(body);
-  // if the body is empty (e.g. in case of a timeout, write an error)
   var parsedRes = {};
   try {
     parsedRes = JSON.parse(body);
@@ -137,6 +144,7 @@ function getTopicalPrediction(domain, modelId) {
   const baseUrl = 'https://api.madkudu.com/v1/';
   domain = domain.replace(/https?:\/\/(www\.)?/, '') // trim http and www
   const payload = JSON.stringify({ domain: domain, show_scores: true });
+  const url = baseUrl + 'models/' + modelId + '/predictions';
   const params = {
     method: 'post',
     payload: payload,
@@ -147,9 +155,12 @@ function getTopicalPrediction(domain, modelId) {
     },
     muteHttpExceptions: true // use this to be able to catch the status of the error
   };
-  const url = baseUrl + 'models/' + modelId + '/predictions';
-  const res = UrlFetchApp.fetch(url, params);
-  return parseApiResults(res);
+  try {
+    const res = UrlFetchApp.fetch(url, params);
+    return parseApiResults(res);
+  } catch (err) {
+    return getError500()
+  }
 }
 
 function getCustomerFitPrediction(domainOrEmail, model) {
@@ -167,6 +178,10 @@ function getCustomerFitPrediction(domainOrEmail, model) {
     },
     muteHttpExceptions: true, // use this to be able to catch the status of the error
   };
-  const res = UrlFetchApp.fetch(url, params);
-  return parseApiResults(res);
+  try {
+    const res = UrlFetchApp.fetch(url, params);
+    return parseApiResults(res);
+  } catch (err) {
+    return getError500()
+  }
 }
