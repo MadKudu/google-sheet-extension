@@ -142,8 +142,7 @@ function getAuthorization() {
 function getTopicalPrediction(domain, modelId) {
   const baseUrl = 'https://api.madkudu.com/v1/';
   domain = domain.replace(/https?:\/\/(www\.)?/, '') // trim http and www
-  if (domain[domain.length - 1] === '/') domain = domain.slice(0, domain.length - 1]); // trim / at end if exists
-  
+  if (domain[domain.length - 1] === '/') domain = domain.slice(0, domain.length - 1); // trim / at end if exists
   const payload = JSON.stringify({ domain: domain, show_scores: true });
   const url = baseUrl + 'models/' + modelId + '/predictions';
   const params = {
@@ -173,7 +172,6 @@ function getCustomerFitPrediction(domainOrEmail, model) {
       domainOrEmail = domainOrEmail.slice(0, domainOrEmail.length - 1); // trim / at end if exists
     }
   }
-  
   const url = baseUrl + model + '?' + paramKey + '=' + encodeURIComponent(domainOrEmail);
   const params = {
     method: 'get',
