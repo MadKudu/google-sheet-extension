@@ -60,7 +60,21 @@
         cursor: pointer;
         text-decoration: underline;
         text-decoration-style: dotted;
-      } 
+      }
+
+      .center {
+        text-align: center;
+      }
+      
+      .customer-fit-model-radio {
+        margin: 0 auto;
+      }
+      
+      .customer-fit-footer {
+        display: inline-flex;
+        justify-content: space-between;
+      }
+
     </style>
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
     <script src="https://unpkg.com/vue-multiselect@2.1.0"></script>
@@ -80,42 +94,68 @@
         
         <div class="content">
         
-          <template v-if="activeTab === 0">
-            Use the Models API to obtain predictions for one or more stored topical models based on the domains that you selected in your Google Sheets.
-            <br>
-            <br>
-            For more information, please see our <a href="https://madkudu.com">docs</a>.
-            <br>
-            <br>
-            <label for="modelSelect">Select Model(s)</label>
-            <br>
-            <select id="modelSelect" multiple size="8">
-              <option v-for="model in models" v-bind:value="model.id">{{ model.name }}</option>
-            </select>
-          </template>
-          
-          <template v-if="activeTab === 1">
-            <input type="radio" name="customerFitModel" value="companies" v-model="customerFitModel" id="companiesRadio" checked><label for="companiesRadio">Companies</label>
-            &nbsp;
-            <input type="radio" name="customerFitModel" value="persons" v-model="customerFitModel" id="personsRadio"><label for="personsRadio">Persons</label>
-            <hr>
-            Use the {{ customerFitModel === 'companies' ? 'Companies' : 'persons' }} API to obtain predictions for MadKudu's customer fit models based on the {{ customerFitModel === 'companies' ? 'domains' : 'email addresses' }} that you selected in your Google Sheet.
-            <br>
-            <br>
-            <br>
-            For more information, please see our <a v-bind:href="'https://developers.madkudu.com/#' + (customerFitModel === 'companies' ? 'companies' : 'persons')">docs</a>.
-          </template>
+          <!-- **Commented for now. This tab must only be shown when there are topical models for this tenant (models.length > 1, maybe?)**
 
-          <br>
-          <br>
-          <input id="insertHeadersCheckbox" type="checkbox" v-model="insertHeaders">
-          <label for="insertHeadersCheckbox">Insert headers</label>
-          <br>
-          <br>
-          <button class="action" v-bind:disabled="isLoading" onclick="runPrediction()">Get predictions</button>
-          <br>
-        
-        </div>
+            <template v-if="activeTab === 0">
+              Use the Models API to obtain predictions for one or more stored topical models based on the domains that you selected in your Google Sheets.
+              <br>
+              <br>
+              For more information, please see our <a href="https://madkudu.com">docs</a>.
+              <br>
+              <br>
+              <label for="modelSelect">Select Model(s)</label>
+              <br>
+              <select id="modelSelect" multiple size="8">
+                <option v-for="model in models" v-bind:value="model.id">{{ model.name }}</option>
+              </select>
+            </template>
+          -->
+          
+          <template v-if="activeTab === 0 && !readyToPredict">
+            <br>
+            <p class="center"><strong>Ready to go!</strong></p>
+            <br>
+            <p class="center">You can now start to predict the fit of your leads (via email addresses) or accounts (via domain) in real-time.</p>
+            <br>
+            <p>Some ideas to start with:</p>
+            <p>1. Determine which event(s) to go to by scoring the list of attendees.</p>
+            <p>2. Prioritize whom to talk to at a conference.</p>
+            <p>3. Prioritize whom you should reach out to for outbound.</p>
+            <br>
+            <br>
+            <div>
+              <p><a target="_blank" href="https://help.madkudu.com/en/articles/2966015-get-predictive-scores-of-all-your-leads-directly-in-google-sheets">See documentation</a></p>
+              <button class="action" onclick="setIsReady()">Let's go!</button>
+            </div>
+          </template>
+  
+             <template v-if="activeTab === 0 && readyToPredict">
+              <p class="center"><strong>Predict the fit of your leads or accounts!</strong></p>
+              <br>
+              <br>
+              <p class="center">The MadKudu API predicts the customer fit of a person or company by returning a score and segment.</p>
+              <br>
+              <p class="center">Select a column or cells containing email addresses and then click "Predict". The result will then be generated in the sheet directly.</p>
+              <br>
+              <br>
+              <div class="customer-fit-model-radio">
+                <input type="radio" name="customerFitModel" value="companies" v-model="customerFitModel" id="companiesRadio" checked><label for="companiesRadio">Companies</label>
+                &nbsp;
+                <input type="radio" name="customerFitModel" value="persons" v-model="customerFitModel" id="personsRadio"><label for="personsRadio">Persons</label>
+              </div>
+              <br>
+              <p>For more information, please see our <a v-bind:href="'https://developers.madkudu.com/#' + (customerFitModel === 'companies' ? 'companies' : 'persons')">docs</a>.</p>
+              <br>
+              <div class="customer-fit-footer">
+                <div>
+                  <input id="insertHeadersCheckbox" type="checkbox" v-model="insertHeaders">
+                  <label for="insertHeadersCheckbox">Insert headers</label>
+                </div>
+                <button class="action" v-bind:disabled="isLoading" onclick="runPrediction()">Predict</button>
+              </div>
+              <br>
+            </template>
+          </div>
         
         <!-- Loading Progress Message -->
         <div class="loading-container" v-if="isLoading && totalAmountToLoad > 0">
@@ -130,19 +170,39 @@
       </template>
       
       <template v-else>
-        <div class="content">
-          <strong>Please enter your secret API key</strong>
+        <template v-if="!passedAccountPage">
           <br>
-          To obtain your API key, just <a href="https://app.madkudu.com">log in</a> to the MadKudu app, go to the Integrations tab and click on the MadKudu API button.
+          <p class="center"><strong>MadKudu Sheets</strong></p>
+          <p class="center">With MadKudu Sheets, you are able to scan your leads through all stages of the funnel before they enter your CRM database.
+          Know what to do with every lead across every step of the funnel, on the fly!</p>
+          <br>
+          <button onclick="handleCreateAccount()">Create an account</button>
+          <button onclick="handleHasAccount()">I have an account</button>
           <br>
           <br>
-          <label for="apiKeyInput">API Key</label>
-          <br>
-          <input id="apiKeyInput" placeholder="a349892jalduwie239">
-          <br>
-          <br>
-          <button class="action" onclick="saveApiKey()">Save</button>
-        </div>
+          <div>
+            <a>See demo</a>
+            |
+            <a>See documentation</a>
+          </div>
+        </template>
+
+        <template v-else>
+          <div class="content">
+            <br>
+            <p class="center"><strong>Let's get started</strong></p>
+            <br>
+            <p class="center">Obtain your API key from the MadKudu app; go to the Integrations tab and click on the MadKudu API button.</p>
+            <br>
+            <br>
+            <label for="apiKeyInput">API Key</label>
+            <br>
+            <input id="apiKeyInput" placeholder="a349892jalduwie239">
+            <br>
+            <button class="action" onclick="saveApiKey()">Next</button>
+          </div>
+        </template>
+
       </template>
       
       <div class="footer">
@@ -162,7 +222,7 @@
         el: '#app',
         data: {
           apiKey: null,
-          tabs: ['Topical', 'Customer Fit'],
+          tabs: ['Customer Fit'],
           activeTab: 0,
           models: [{name:'none'}],
           customerFitModel: 'companies',
@@ -171,7 +231,9 @@
           isLoading: false,
           currentAmountLoaded: 0,
           totalAmountToLoad: 0,
-          activeSheet: null
+          activeSheet: null,
+          readyToPredict: false,
+          passedAccountPage: false
         }
       });
       
@@ -216,6 +278,10 @@
         app.currentAmountLoaded = 0;
         app.totalAmountToLoad = 0;
       }
+
+      function setIsReady() {
+        app.readyToPredict = true;
+      }
       
       // Fetches the current user's models from MadKudu API.
       async function loadModels() {
@@ -235,6 +301,16 @@
         if (app.apiKey) {
           app.models = models
         }
+      }
+
+      function handleCreateAccount() {
+        app.passedAccountPage = true;
+        // rest of account creation code
+      }
+      
+      function handleHasAccount() {
+        app.passedAccountPage = true;
+        // rest of "has account" code
       }
       
       // returns the selected models from the multiselect element
