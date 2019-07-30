@@ -3,7 +3,7 @@
   <head>
     <base target="_top">
     <style>
-      
+    
       .tabs {
         display: flex;
         width: 100%;
@@ -60,7 +60,21 @@
         cursor: pointer;
         text-decoration: underline;
         text-decoration-style: dotted;
-      } 
+      }
+      
+      .center {
+        text-align: center;
+      }
+      
+      .customer-fit-model-radio {
+        margin: 0 auto;
+      }
+      
+      .customer-fit-footer {
+        display: inline-flex;
+        justify-content: space-between;
+      }
+      
     </style>
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
     <script src="https://unpkg.com/vue-multiselect@2.1.0"></script>
@@ -68,6 +82,7 @@
   </head>
   <body>
     <div id="app">
+    
       <div style="height: 4px; background-color: #448aff"></div>
       
       <template v-if="apiKey">
@@ -79,6 +94,8 @@
         </nav>
         
         <div class="content">
+        
+        <!-- **Commented for now. This tab must only be shown when there are topical models for this tenant (models.length > 1, maybe?)**
         
           <template v-if="activeTab === 0">
             Use the Models API to obtain predictions for one or more stored topical models based on the domains that you selected in your Google Sheets.
@@ -93,27 +110,52 @@
               <option v-for="model in models" v-bind:value="model.id">{{ model.name }}</option>
             </select>
           </template>
-          
-          <template v-if="activeTab === 1">
-            <input type="radio" name="customerFitModel" value="companies" v-model="customerFitModel" id="companiesRadio" checked><label for="companiesRadio">Companies</label>
-            &nbsp;
-            <input type="radio" name="customerFitModel" value="persons" v-model="customerFitModel" id="personsRadio"><label for="personsRadio">Persons</label>
-            <hr>
-            Use the {{ customerFitModel === 'companies' ? 'Companies' : 'persons' }} API to obtain predictions for MadKudu's customer fit models based on the {{ customerFitModel === 'companies' ? 'domains' : 'email addresses' }} that you selected in your Google Sheet.
-            <br>
-            <br>
-            <br>
-            For more information, please see our <a v-bind:href="'https://developers.madkudu.com/#' + (customerFitModel === 'companies' ? 'companies' : 'persons')">docs</a>.
+        -->
+        
+          <template v-if="activeTab === 0 && !readyToPredict">
+          <br>
+          <p class="center"><strong>Ready to go!</strong></p>
+          <br>
+          <p class="center">You can now start to predict the fit of your leads (via email addresses) or accounts (via domain) in real-time.</p>
+          <br>
+          <p>Some ideas to start with:</p>
+          <p>1. Determine which event(s) to go to by scoring the list of attendees.</p>
+          <p>2. Prioritize whom to talk to at a conference.</p>
+          <p>3. Prioritize whom you should reach out to for outbound.</p>
+          <br>
+          <br>
+          <div>
+            <p><a target="_blank" href="https://help.madkudu.com/en/articles/2966015-get-predictive-scores-of-all-your-leads-directly-in-google-sheets">See documentation</a></p>
+            <button class="action" onclick="setIsReady()">Let's go!</button>
+          </div>
           </template>
-
-          <br>
-          <br>
-          <input id="insertHeadersCheckbox" type="checkbox" v-model="insertHeaders">
-          <label for="insertHeadersCheckbox">Insert headers</label>
-          <br>
-          <br>
-          <button class="action" v-bind:disabled="isLoading" onclick="runPrediction()">Get predictions</button>
-          <br>
+          
+          <template v-if="activeTab === 0 && readyToPredict">
+            <p class="center"><strong>Predict the fit of your leads or accounts!</strong></p>
+            <br>
+            <br>
+            <p class="center">The MadKudu API predicts the customer fit of a person or company by returning a score and segment.</p>
+            <br>
+            <p class="center">Select a column or cells containing email addresses and then click "Predict". The result will then be generated in the sheet directly.</p>
+            <br>
+            <br>
+            <div class="customer-fit-model-radio">
+              <input type="radio" name="customerFitModel" value="companies" v-model="customerFitModel" id="companiesRadio" checked><label for="companiesRadio">Companies</label>
+              &nbsp;
+              <input type="radio" name="customerFitModel" value="persons" v-model="customerFitModel" id="personsRadio"><label for="personsRadio">Persons</label>
+            </div>
+            <br>
+            <p>For more information, please see our <a v-bind:href="'https://developers.madkudu.com/#' + (customerFitModel === 'companies' ? 'companies' : 'persons')">docs</a>.</p>
+            <br>
+            <div class="customer-fit-footer">
+              <div>
+                <input id="insertHeadersCheckbox" type="checkbox" v-model="insertHeaders">
+                <label for="insertHeadersCheckbox">Insert headers</label>
+              </div>
+              <button class="action" v-bind:disabled="isLoading" onclick="runPrediction()">Predict</button>
+            </div>
+            <br>
+          </template>
         
         </div>
         
@@ -130,19 +172,38 @@
       </template>
       
       <template v-else>
-        <div class="content">
-          <strong>Please enter your secret API key</strong>
+        <template v-if="!passedAccountPage">
           <br>
-          To obtain your API key, just <a href="https://app.madkudu.com">log in</a> to the MadKudu app, go to the Integrations tab and click on the MadKudu API button.
+          <p class="center"><strong>MadKudu Sheets</strong></p>
+          <p class="center">With MadKudu Sheets, you are able to scan your leads through all stages of the funnel before they enter your CRM database.
+          Know what to do with every lead across every step of the funnel, on the fly!</p>
+          <br>
+          <button onclick="handleCreateAccount()">Create an account</button>
+          <button onclick="handleHasAccount()">I have an account</button>
           <br>
           <br>
-          <label for="apiKeyInput">API Key</label>
-          <br>
-          <input id="apiKeyInput" placeholder="a349892jalduwie239">
-          <br>
-          <br>
-          <button class="action" onclick="saveApiKey()">Save</button>
-        </div>
+          <div>
+            <a>See demo</a>
+            |
+            <a>See documentation</a>
+          </div>
+        </template>
+        
+        <template v-else>
+          <div class="content">
+            <br>
+            <p class="center"><strong>Let's get started</strong></p>
+            <br>
+            <p class="center">Obtain your API key from the MadKudu app; go to the Integrations tab and click on the MadKudu API button.</p>
+            <br>
+            <br>
+            <label for="apiKeyInput">API Key</label>
+            <br>
+            <input id="apiKeyInput" placeholder="a349892jalduwie239">
+            <br>
+            <button class="action" onclick="saveApiKey()">Next</button>
+          </div>
+        </template>
       </template>
       
       <div class="footer">
@@ -162,7 +223,7 @@
         el: '#app',
         data: {
           apiKey: null,
-          tabs: ['Topical', 'Customer Fit'],
+          tabs: ['Customer Fit'],
           activeTab: 0,
           models: [{name:'none'}],
           customerFitModel: 'companies',
@@ -171,7 +232,9 @@
           isLoading: false,
           currentAmountLoaded: 0,
           totalAmountToLoad: 0,
-          activeSheet: null
+          activeSheet: null,
+          readyToPredict: false,
+          passedAccountPage: false
         }
       });
       
@@ -217,6 +280,11 @@
         app.totalAmountToLoad = 0;
       }
       
+      function setIsReady() {
+        app.readyToPredict = true;
+      }
+      
+      
       // Fetches the current user's models from MadKudu API.
       async function loadModels() {
         const res = await fetch(apiUrl + 'models', {
@@ -257,6 +325,50 @@
         return result;
       }
       
+      function handleCreateAccount() {
+        app.passedAccountPage = true;
+        // rest of account creation code
+      }
+      
+      function handleHasAccount() {
+        app.passedAccountPage = true;
+        // rest of "has account" code
+      }
+      
+      function showErrorDialog(res, parsedRes, helpTip) {
+        run('error', res.status, res.statusText, parsedRes.message, helpTip);
+      }
+      
+      function checkErrorsAndShowDialog(res, parsedRes) {
+        if (res.status >= 400) {
+          showErrorDialog(res, parsedRes, parsedRes.message)
+          app.loading = false
+        }
+      }
+      
+      /**
+       * Fetches a topical prediction for a given domain
+       */
+      async function getPrediction(domain, modelId) {
+        domain = domain.replace(/https?:\/\/(www\.)?/, '') // trim http and www
+        const res = await fetch(apiUrl + 'models/' + modelId + '/predictions', {
+          method: 'post',
+          headers: new Headers({
+            'Authorization': 'Basic '+app.apiKey,
+            'content-type': 'application/json'
+          }),
+          body: JSON.stringify({ domain, 'show_scores': true })
+        })
+        // alert error codes
+        const parsedRes = await res.json()
+        if (res.status >= 400) {
+          parsedRes.error = true
+          parsedRes.status = res.status
+        }
+        // checkErrorsAndShowDialog(res, parsedRes) commenting out in favor of printing error to sheet
+        return parsedRes
+      }
+      
       async function runTopicalPrediction() {
         app.activeSheet = await run('getActiveSheet')
         app.isLoading = true
@@ -280,7 +392,7 @@
           const domain = domains[domainIndex]
           for (let modelIndex = 0; modelIndex < selectedModels.length; modelIndex++) {
             const model = selectedModels[modelIndex]
-            const res = await run('getTopicalPrediction', domain, model.id)
+            const res = await getPrediction(domain, model.id)
             const result = {
               domain,
               modelId: model.id,
@@ -315,43 +427,63 @@
         resetCounter()
       }
       
+      async function getCustomerFitPrediction(domainOrEmail, model) {
+        const paramKey = (model === 'companies' ? 'domain' : 'email')
+        if (paramKey === 'domain') {
+          domainOrEmail = domainOrEmail.replace(/https?:\/\/(www\.)?/, '') // trim http and www
+        }
+        console.log(domainOrEmail)
+        const url = apiUrl + model + '?' + paramKey + '=' + domainOrEmail
+        const res = await fetch(url, {
+          method: 'get',
+          headers: new Headers({
+            'Authorization': 'Basic '+app.apiKey,
+          })
+        })
+        // alert for error codes
+        const parsedRes = await res.json()
+        if (res.status >= 400) {
+          parsedRes.error = true
+          parsedRes.status = res.status
+        }
+        return parsedRes
+      }
+      
       async function runCustomerFitPrediction() {
-        app.activeSheet = await run('getActiveSheet');
-        app.isLoading = true;
-        const model = app.customerFitModel; // either "companies" or "persons"
-        const selection = await run('getActiveSelection', app.activeSheet);
-        domainOrEmails = selection.values.map(c => c[0]); // map to array of the first value of each row
-        app.totalAmountToLoad = domainOrEmails.length;
-        console.log('selection length: ' + app.totalAmountToLoad);
-
+        app.activeSheet = await run('getActiveSheet')
+        app.isLoading = true
+        const model = app.customerFitModel // either "companies" or "persons"
+        const selection = await run('getActiveSelection', app.activeSheet)
+        console.log("what are the value" + selection.values, selection)
+        domainOrEmails = selection.values.map(c => c[0]) // map to array of the first value of each row
+        app.totalAmountToLoad = domainOrEmails.length
         // put headers above data, if there is room
         let insertedHeaders = false
         if (app.insertHeaders) {
           const headers = [(model === 'companies' ? 'Domain' : 'Email'), 'customer_fit', 'customer_fit_score', 'customer_fit_signals']
           insertedHeaders = await run('createRowHeaders', app.activeSheet, selection.row, selection.column, headers)
         }
-
         // start predictions for all domains
-        for (let domainIndex = 0; domainIndex < domainOrEmails.length; domainIndex += 1) {
+        for (let domainIndex = 0; domainIndex < domainOrEmails.length; domainIndex++) {
           const domainOrEmail = domainOrEmails[domainIndex]
-          console.log('domainOrEmail', domainOrEmail);
-          const res = await run('getCustomerFitPrediction', domainOrEmail, model);
-          console.log('raw results', res);
-          const row = selection.row + domainIndex + (insertedHeaders ? 1 : 0);
-          
+          const res = await getCustomerFitPrediction(domainOrEmail, model)
+          console.log("customer fit: " + JSON.stringify(res.properties.customer_fit));
+          const row = selection.row + domainIndex + (insertedHeaders ? 1 : 0)
           // write prediction to the sheet
+          const top_signals = res.properties.customer_fit.top_signals_formatted
+//           console.log("here are the top signal " + JSON.stringify(top_signals), row, selection.column + 3, top_signals)
           const batch = []
           if (res.properties && res.properties.customer_fit) {
             const customerFit = res.properties.customer_fit
             batch.push({ row, col: selection.column + 1, val: customerFit.segment })
             batch.push({ row, col: selection.column + 2, val: customerFit.score })
-            batch.push({ row, col: selection.column + 3, val: customerFit.top_signals_formatted })
+            batch.push({ row, col: selection.column + 3, val: top_signals })
           } else if (res.error) {
             batch.push({ row, col: selection.column + 1, val: 'Error - ' + res.status + ' ' + res.message })
             batch.push({ row, col: selection.column + 2, val: 'Error - ' + res.status + ' ' + res.message })
           }
           await run('setCells', app.activeSheet, batch)
-          app.currentAmountLoaded += 1
+          app.currentAmountLoaded++
         }
         app.isLoading = false
         resetCounter()
@@ -367,6 +499,7 @@
             runCustomerFitPrediction()
             break
           default:
+            // invalid tab
             break
         }
       }
