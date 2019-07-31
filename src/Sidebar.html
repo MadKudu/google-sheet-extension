@@ -156,10 +156,11 @@
           </template>
             
           <template v-if="activeTab === 1">
-            <p>Use the Models API to obtain predictions for one or more stored topical models based on the domains that you selected in your Google Sheets.</p>
+            <p class="center">Use the Models API to obtain predictions for one or more stored topical models based on the domains that you selected in your Google Sheets.</p>
             <br>
             <br>
-            <label for="modelSelect">Select Model(s)</label>
+            <label for="modelSelect"><strong>Select Model(s):</strong></label>
+            <br>
             <br>
             <select id="modelSelect" multiple size="8">
               <option v-for="model in models" v-bind:value="model.id">{{ model.name }}</option>
