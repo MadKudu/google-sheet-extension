@@ -41,6 +41,21 @@
         color: #a7a7a7;
         line-height: 24px;
       }
+      
+      .error-container {
+        background: rgba(255, 75, 75, 0.6);
+        padding: 5px;
+        text-align: center;
+        color: snow;
+        line-height: 24px;
+        font-weight: 14px;
+      }
+      
+      .error-container-title {
+        font-weight: bold;
+        font-size: 16px;
+      }
+      
       .loading-amount {
         color: #1a1a1a;
         font-size: 18px;
@@ -155,7 +170,6 @@
               <button class="action" v-bind:disabled="isLoading" onclick="runPrediction()">Predict</button>
             </div>
             <br>
-            <br>
             <div class="center doc-link">
               <a>See demo</a>
               |
@@ -191,11 +205,16 @@
         <!-- Loading Progress Message -->
         <div class="loading-container" v-if="isLoading && totalAmountToLoad > 0">
           <p>Loading...</p>
-          <br>
           <div class="loading-amount">
             <span class="blue-text">{{ currentAmountLoaded }}</span> out of {{ totalAmountToLoad }}
           </div>
           <p>Predictions completed</p>
+        </div>
+        
+        <!-- Error Message -->
+        <div class="error-container" v-if="!isLoading && isError">
+          <p class="error-container-title">Error:</p>
+          <p>{{ errorMessage }}</p>
         </div>
       
       </template>
@@ -273,6 +292,7 @@
           currentAmountLoaded: 0,
           totalAmountToLoad: 0,
           activeSheet: null,
+          isError: false,
           readyToPredict: false,
           passedAccountPage: false
         }
@@ -421,6 +441,7 @@
       async function runTopicalPrediction() {
         app.activeSheet = await run('getActiveSheet')
         app.isLoading = true
+        app.isError = false
         const selectedModels = getSelectedModels()
         if (selectedModels.length === 0) {
           run('alert', 'Please select at least one model.')
@@ -442,6 +463,13 @@
           for (let modelIndex = 0; modelIndex < selectedModels.length; modelIndex++) {
             const model = selectedModels[modelIndex]
             const res = await run('getTopicalPrediction', domain, model.id)
+            if (res.error) {
+              app.isLoading = false
+              app.isError = true
+              app.errorMessage = res.message
+              resetCounter()
+              return
+            }
             const result = {
               domain,
               modelId: model.id,
@@ -479,6 +507,7 @@
       async function runCustomerFitPrediction() {
         app.activeSheet = await run('getActiveSheet');
         app.isLoading = true;
+        app.isError = false;
         const model = app.customerFitModel; // either "companies" or "persons"
         const selection = await run('getActiveSelection', app.activeSheet);
         domainOrEmails = selection.values.map(c => c[0]); // map to array of the first value of each row
@@ -495,9 +524,14 @@
         // start predictions for all domains
         for (let domainIndex = 0; domainIndex < domainOrEmails.length; domainIndex += 1) {
           const domainOrEmail = domainOrEmails[domainIndex]
-          console.log('domainOrEmail', domainOrEmail);
           const res = await run('getCustomerFitPrediction', domainOrEmail, model);
-          console.log('raw results', res);
+          if (res.error) {
+            app.isLoading = false
+            app.isError = true
+            app.errorMessage = res.message
+            resetCounter()
+            return
+          }
           const row = selection.row + domainIndex + (insertedHeaders ? 1 : 0);
           
           // write prediction to the sheet
