@@ -26,7 +26,7 @@
       }
       
       .content {
-        padding: 8px;
+        padding: 15px;
         padding-top: 32px;
         font-size: 15px;
       }
@@ -86,6 +86,15 @@
       
       .doc-link {
         font-size: 12px;
+      }
+      
+      .apiInputClass {
+        width: 265px;
+      }
+      
+      .api_buttons_container {
+        display: flex;
+        justify-content: space-between;
       }
 
     </style>
@@ -216,18 +225,22 @@
           <template v-else>
             <p class="center"><strong>Let's get started</strong></p>
             <br>
-            <p class="center">Obtain your API key from the MadKudu app; go to the Integrations tab and click on the MadKudu API button.</p>
-            <br>
+            <p class="center">Obtain your API key from the MadKudu app</p>
             <br>
             <label for="apiKeyInput">API Key</label>
             <br>
-            <a class="doc-link" target="_blank" href="https://help.madkudu.com/en/articles/2966015-get-predictive-scores-of-all-your-leads-directly-in-google-sheets/#installing-the-add-on">How do I get my API key?</a>
+            <br>
+            <input class="apiInputClass" id="apiKeyInput" onclick="pasteApiKey()" placeholder="a349892jalduwie239">
             <br>
             <br>
-            <input id="apiKeyInput" placeholder="a349892jalduwie239">
+            <div class="api_buttons_container">
+              <button onclick="goWelcomePage()">Back</button>
+              <button class="action" onclick="saveApiKeyButton()">Next</button>
+            </div>
             <br>
-            <br>
-            <button class="action" onclick="saveApiKey()">Next</button>
+            <p class="center"><strong>How to get an API Key</strong></p>
+            <p><b>New customer: </b>Sign up through <a target="_blank" href="http://app.madkudu.com/signup?ref=googlesheet">this link</a> and copy the API key from the "Get Started" page</p>
+            <p><b>Already a MadKudu customer: </b>Follow <a target="_blank" href="http://app.madkudu.com/login?redirect=%2Fget-started%2Fgooglesheet">this link</a> to log in on the app and get your API key</p>
           </template>
         </div>
 
@@ -286,19 +299,47 @@
         return document.querySelector(selector);
       }
       
-      function saveApiKey() {
+      function saveApiKeyButton() {
         const apiKey = $('#apiKeyInput').value;
+        saveApiKey(apiKey)
+      }
+      
+      function saveApiKey(apiKey) {
         const encryptedApiKey = btoa(apiKey);
         app.apiKey = encryptedApiKey;
         loadModels();
         run('saveUserProperty', 'madkudu_api_key', apiKey);
       }
       
+      function isApiKey(apiKey) {
+        return apiKey.length === 32 && apiKey.replace(' ','').length === 32
+      }
+      
+      function pasteApiKey() {
+        navigator.clipboard.readText().then((text) => {
+          if (isApiKey(text)) $('#apiKeyInput').value = text
+        })
+      }
+      
+      function goWelcomePage () {
+        app.passedAccountPage = false;
+      }
+      
+      async function autoSaveApiKey() {
+        const text = await navigator.clipboard.readText()
+        if (isApiKey(text)) {
+          saveApiKey(text)
+        } else {
+          app.passedAccountPage = true;
+        }
+      }
+      
       function changeApiKey() {
         const oldKey = atob(app.apiKey);
         app.apiKey = null;
         setTimeout(() => {
-          $('#apiKeyInput').value = oldKey;
+          // check len to avoid weird bug where oldKey = "  ée"
+          if (oldKey.length > 4) $('#apiKeyInput').value = oldKey;
         }, 0)
       }
       
@@ -335,14 +376,26 @@
         }
       }
 
-      function handleCreateAccount() {
-        app.passedAccountPage = true;
-        // rest of account creation code
+      async function handleCreateAccount() {
+        window.open("http://app.madkudu.com/signup?ref=googlesheet",'_blank');
+        app.focusChecker = setInterval(() => checkFocus(), 500)
+        app.failsafeFocusClear = setTimeout(() => {
+          app.passedAccountPage = true;
+          window.clearInterval(app.focusChecker)
+        }, 900000)
+      }
+      
+      async function checkFocus() {
+        const focused = document.hasFocus();
+        if (focused) {
+          autoSaveApiKey()
+          window.clearInterval(app.focusChecker)
+          window.clearTimeout(app.failsafeFocusClear)
+        }
       }
       
       function handleHasAccount() {
         app.passedAccountPage = true;
-        // rest of "has account" code
       }
       
       // returns the selected models from the multiselect element
