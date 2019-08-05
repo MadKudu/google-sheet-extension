@@ -56,16 +56,19 @@ function getActiveSelection(sheetId) {
   };
 }
 
-function setCellValue(sheetId, row, col, val) {
+function setCellValue(sheetId, row, col, val, isError) {
   const sheet = getSheetById(sheetId);
   const cell = sheet.getRange(row, col);
+  
+  if (isError) cell.setBackground('red').setFontColor('white');
+  
   cell.setValue(val);
 }
 
 // cells should be an array of { row, col, val }
-function setCells(sheetId, cells) {
+function setCells(sheetId, cells, isError) {
   cells.forEach(function(cell) {
-    setCellValue(sheetId, cell.row, cell.col, cell.val);
+    setCellValue(sheetId, cell.row, cell.col, cell.val, isError);
   });
   return true;
 }
