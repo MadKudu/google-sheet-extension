@@ -60,7 +60,11 @@ function setCellValue(sheetId, row, col, val, isError) {
   const sheet = getSheetById(sheetId);
   const cell = sheet.getRange(row, col);
   
-  if (isError) cell.setBackground('red').setFontColor('white');
+  if (isError) {
+    cell.setBackground('red').setFontColor('white')
+  } else {
+    cell.setBackground('white').setFontColor('black')
+  }
   
   cell.setValue(val);
 }
