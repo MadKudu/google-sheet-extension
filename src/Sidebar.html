@@ -230,17 +230,17 @@
             <label for="apiKeyInput">API Key</label>
             <br>
             <br>
-            <input class="apiInputClass" id="apiKeyInput" onclick="pastApiKey()" placeholder="a349892jalduwie239">
+            <input class="apiInputClass" id="apiKeyInput" onclick="pasteApiKey()" placeholder="a349892jalduwie239">
             <br>
             <br>
             <div class="api_buttons_container">
-              <button onclick="goWelcomePage()">Previous</button>
+              <button onclick="goWelcomePage()">Back</button>
               <button class="action" onclick="saveApiKeyButton()">Next</button>
             </div>
             <br>
             <p class="center"><strong>How to get an API Key</strong></p>
-            <p><b>New customer  </b>Sign up on <a target="_blank" href="http://app.madkudu.com/signup?ref=googlesheet">this link</a> and copy the API key from the Get-Started page</p>
-            <p><b>Already a Madkudu customer ?  </b>Follow <a target="_blank" href="http://app.madkudu.com/login?redirect=%2Fget-started%2Fgooglesheet">this link</a> to log in on the app and get your API key</p>
+            <p><b>New customer: </b>Sign up through <a target="_blank" href="http://app.madkudu.com/signup?ref=googlesheet">this link</a> and copy the API key from the "Get Started" page</p>
+            <p><b>Already a MadKudu customer: </b>Follow <a target="_blank" href="http://app.madkudu.com/login?redirect=%2Fget-started%2Fgooglesheet">this link</a> to log in on the app and get your API key</p>
           </template>
         </div>
 
@@ -301,7 +301,6 @@
       
       function saveApiKeyButton() {
         const apiKey = $('#apiKeyInput').value;
-        console.log(apiKey)
         saveApiKey(apiKey)
       }
       
@@ -316,14 +315,10 @@
         return apiKey.length === 32 && apiKey.replace(' ','').length === 32
       }
       
-      function pastApiKey() {
-        navigator.clipboard.readText().then(text => {
+      function pasteApiKey() {
+        navigator.clipboard.readText().then((text) => {
           if (isApiKey(text)) $('#apiKeyInput').value = text
         })
-      }
-      
-      function clearClipboard() {
-        // to be filled 
       }
       
       function goWelcomePage () {
@@ -333,7 +328,6 @@
       async function autoSaveApiKey() {
         const text = await navigator.clipboard.readText()
         if (isApiKey(text)) {
-          clearClipboard()
           saveApiKey(text)
         } else {
           app.passedAccountPage = true;
@@ -344,7 +338,8 @@
         const oldKey = atob(app.apiKey);
         app.apiKey = null;
         setTimeout(() => {
-          $('#apiKeyInput').value = oldKey;
+          // check len to avoid weird bug where oldKey = "  ée"
+          if (oldKey.length > 4) $('#apiKeyInput').value = oldKey;
         }, 0)
       }
       
@@ -383,25 +378,24 @@
 
       async function handleCreateAccount() {
         window.open("http://app.madkudu.com/signup?ref=googlesheet",'_blank');
-        app.FocusChecker = setInterval(() => {checkFocus()},500)
-        app.FocusTimeOut = setTimeout(() => {
+        app.focusChecker = setInterval(() => checkFocus(), 500)
+        app.failsafeFocusClear = setTimeout(() => {
           app.passedAccountPage = true;
-          window.clearInterval(app.myFocusChecker)
-        },900000)
+          window.clearInterval(app.focusChecker)
+        }, 900000)
       }
       
       async function checkFocus() {
-           const focused = document.hasFocus();
-           if (focused) {
-             autoSaveApiKey()
-             window.clearInterval(app.FocusChecker)
-             window.clearTimeout(app.FocusTimeOut)
-           }
+        const focused = document.hasFocus();
+        if (focused) {
+          autoSaveApiKey()
+          window.clearInterval(app.focusChecker)
+          window.clearTimeout(app.failsafeFocusClear)
+        }
       }
       
       function handleHasAccount() {
         app.passedAccountPage = true;
-        // rest of "has account" code
       }
       
       // returns the selected models from the multiselect element
@@ -541,4 +535,3 @@
     </script>
   </body>
 </html>
-
