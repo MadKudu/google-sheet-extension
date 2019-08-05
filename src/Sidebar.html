@@ -41,6 +41,21 @@
         color: #a7a7a7;
         line-height: 24px;
       }
+      
+      .error-container {
+        background: rgba(255, 75, 75, 0.6);
+        padding: 5px;
+        text-align: center;
+        color: snow;
+        line-height: 24px;
+        font-weight: 14px;
+      }
+      
+      .error-container-title {
+        font-weight: bold;
+        font-size: 16px;
+      }
+      
       .loading-amount {
         color: #1a1a1a;
         font-size: 18px;
@@ -155,7 +170,6 @@
               <button class="action" v-bind:disabled="isLoading" onclick="runPrediction()">Predict</button>
             </div>
             <br>
-            <br>
             <div class="center doc-link">
               <a>See demo</a>
               |
@@ -191,11 +205,16 @@
         <!-- Loading Progress Message -->
         <div class="loading-container" v-if="isLoading && totalAmountToLoad > 0">
           <p>Loading...</p>
-          <br>
           <div class="loading-amount">
             <span class="blue-text">{{ currentAmountLoaded }}</span> out of {{ totalAmountToLoad }}
           </div>
           <p>Predictions completed</p>
+        </div>
+        
+        <!-- Error Message -->
+        <div class="error-container" v-if="!isLoading && isError">
+          <p class="error-container-title">Error</p>
+          <p>{{ errorsAmount }} failed out of {{ totalAmountToLoad }}</p>
         </div>
       
       </template>
@@ -272,7 +291,9 @@
           isLoading: false,
           currentAmountLoaded: 0,
           totalAmountToLoad: 0,
+          errorsAmount: 0,
           activeSheet: null,
+          isError: false,
           readyToPredict: false,
           passedAccountPage: false
         }
@@ -346,6 +367,9 @@
       function resetCounter() {
         app.currentAmountLoaded = 0;
         app.totalAmountToLoad = 0;
+        app.errorsAmount = 0;
+        app.isLoading = true;
+        app.isError = false;
       }
 
       function setIsReady() {
@@ -420,7 +444,7 @@
       
       async function runTopicalPrediction() {
         app.activeSheet = await run('getActiveSheet')
-        app.isLoading = true
+        resetCounter()
         const selectedModels = getSelectedModels()
         if (selectedModels.length === 0) {
           run('alert', 'Please select at least one model.')
@@ -442,6 +466,8 @@
           for (let modelIndex = 0; modelIndex < selectedModels.length; modelIndex++) {
             const model = selectedModels[modelIndex]
             const res = await run('getTopicalPrediction', domain, model.id)
+            if (res.error) app.errorsAmount++
+            
             const result = {
               domain,
               modelId: model.id,
@@ -468,17 +494,18 @@
               batch.push({ row, col: selection.column + 3, val: 'null' })
               batch.push({ row, col: selection.column + 4, val: 'null' })
             }
-            await run('setCells', app.activeSheet, batch)
+            await run('setCells', app.activeSheet, batch, !!res.error)
             app.currentAmountLoaded++
           }
         }
+        
+        if (app.errorsAmount) app.isError = true
         app.isLoading = false
-        resetCounter()
       }
       
       async function runCustomerFitPrediction() {
         app.activeSheet = await run('getActiveSheet');
-        app.isLoading = true;
+        resetCounter();
         const model = app.customerFitModel; // either "companies" or "persons"
         const selection = await run('getActiveSelection', app.activeSheet);
         domainOrEmails = selection.values.map(c => c[0]); // map to array of the first value of each row
@@ -495,9 +522,8 @@
         // start predictions for all domains
         for (let domainIndex = 0; domainIndex < domainOrEmails.length; domainIndex += 1) {
           const domainOrEmail = domainOrEmails[domainIndex]
-          console.log('domainOrEmail', domainOrEmail);
           const res = await run('getCustomerFitPrediction', domainOrEmail, model);
-          console.log('raw results', res);
+          if (res.error) app.errorsAmount++
           const row = selection.row + domainIndex + (insertedHeaders ? 1 : 0);
           
           // write prediction to the sheet
@@ -511,12 +537,12 @@
             batch.push({ row, col: selection.column + 1, val: 'Error - ' + res.status + ' ' + res.message })
             batch.push({ row, col: selection.column + 2, val: 'Error - ' + res.status + ' ' + res.message })
           }
-          await run('setCells', app.activeSheet, batch)
+          await run('setCells', app.activeSheet, batch, !!res.error)
           app.currentAmountLoaded += 1
         }
-        app.isLoading = false
-        resetCounter()
         
+        if (app.errorsAmount) app.isError = true
+        app.isLoading = false
       }
       
       function runPrediction() {
