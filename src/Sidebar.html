@@ -27,8 +27,12 @@
       
       .content {
         padding: 15px;
-        padding-top: 32px;
+        padding-top: 20px;
         font-size: 15px;
+      }
+      
+      .content-body {
+        margin-top: 30px;
       }
       
       #modelSelect {
@@ -66,6 +70,9 @@
       }
       
       .footer {
+        display: inline-flex;
+        justify-content: space-between;
+        width: 94.67%;
         position: absolute;
         bottom: 0;
         padding: 8px;
@@ -111,7 +118,19 @@
         display: flex;
         justify-content: space-between;
       }
-
+      
+      .freemium-label {
+        width: 96.83%;
+        background-color: rgba(76, 142, 251, 0.4);
+        text-align: center;
+        padding: 5px;
+      }
+      
+      .freemium-label-text {
+        margin: 0;
+        font-size: 11px;
+      }
+      
     </style>
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
     <script src="https://unpkg.com/vue-multiselect@2.1.0"></script>
@@ -128,20 +147,23 @@
             {{ tab }}
           </div>
         </nav>
+        <div class="freemium-label">
+          <p class="freemium-label-text">You are currently using a free model to score your leads. <a href="https://www.madkudu.com/contact-us?ref=googlesheet" target="_blank">Contact us</a> to personalize your experience and improve your results!</p>
+        </div>
         
         <div class="content">
           
           <template v-if="activeTab === 0 && !readyToPredict">
             <p class="center"><strong>Ready to go!</strong></p>
-            <br>
-            <p class="center">You can now start to predict the fit of your leads (via email addresses) or accounts (via domain) in real-time.</p>
-            <br>
-            <p>Some ideas to start with:</p>
-            <p>1. Determine which event(s) to go to by scoring the list of attendees.</p>
-            <p>2. Prioritize whom to talk to at a conference.</p>
-            <p>3. Prioritize whom you should reach out to for outbound.</p>
-            <br>
-            <br>
+            <div class="content-body">
+              <p class="center">You can now start to predict the fit of your leads (via email addresses) or accounts (via domain) in real-time.</p>
+              <br>
+              <p>Some ideas to start with:</p>
+              <p>1. Determine which event(s) to go to by scoring the list of attendees.</p>
+              <p>2. Prioritize whom to talk to at a conference.</p>
+              <p>3. Prioritize whom you should reach out to for outbound.</p>
+              <br>
+            </div>
             <div class="lets-go-footer">
               <p><a class="doc-link" target="_blank" href="https://help.madkudu.com/en/articles/2966015-get-predictive-scores-of-all-your-leads-directly-in-google-sheets">See documentation</a></p>
               <button class="action" onclick="setIsReady()">Let's go!</button>
@@ -150,16 +172,16 @@
   
           <template v-if="activeTab === 0 && readyToPredict">
             <p class="center"><strong>Predict the fit of your leads or accounts!</strong></p>
-            <br>
-            <p class="center">The MadKudu API predicts the customer fit of a person or company by returning a score and segment.</p>
-            <p class="center">Select a column or cells containing email addresses and then click "Predict". The result will then be generated in the sheet directly.</p>
-            <br>
-            <div class="customer-fit-model-radio">
-              <input type="radio" name="customerFitModel" value="companies" v-model="customerFitModel" id="companiesRadio" checked><label for="companiesRadio">Companies</label>
+            <div class="content-body">
+              <p class="center">The MadKudu API predicts the customer fit of a person or company by returning a score and segment.</p>
+              <p class="center">Select a column or cells containing email addresses and then click "Predict". The result will then be generated in the sheet directly.</p>
               <br>
-              <input type="radio" name="customerFitModel" value="persons" v-model="customerFitModel" id="personsRadio"><label for="personsRadio">Persons</label>
+              <div class="customer-fit-model-radio">
+                <input type="radio" name="customerFitModel" value="companies" v-model="customerFitModel" id="companiesRadio" checked><label for="companiesRadio">Companies</label>
+                <br>
+                <input type="radio" name="customerFitModel" value="persons" v-model="customerFitModel" id="personsRadio"><label for="personsRadio">Persons</label>
+              </div>
             </div>
-            <br>
             <p class="doc-link">For more information, please see our <a v-bind:href="'https://developers.madkudu.com/#' + (customerFitModel === 'companies' ? 'companies' : 'persons')">docs</a>.</p>
             <br>
             <div class="customer-fit-footer">
@@ -175,12 +197,10 @@
               |
               <a target="_blank" v-bind:href="'https://developers.madkudu.com/#' + (customerFitModel === 'companies' ? 'companies' : 'persons')">See documentation</a>
             </div>
-            <br>
           </template>
             
           <template v-if="activeTab === 1">
             <p class="center">Use the Models API to obtain predictions for one or more stored topical models based on the domains that you selected in your Google Sheets.</p>
-            <br>
             <br>
             <label for="modelSelect"><strong>Select Model(s):</strong></label>
             <br>
@@ -198,7 +218,6 @@
               </div>
               <button class="action" v-bind:disabled="isLoading" onclick="runPrediction()">Predict</button>
             </div>
-            <br>
           </template>
         </div>
         
@@ -267,6 +286,7 @@
       
       <div class="footer doc-link">
         <a onclick="changeApiKey()">Change API Key</a>
+        <a href="https://www.madkudu.com/" target="_blank">MadKudu</a>
       </div>
       
     </div>
