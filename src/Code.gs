@@ -66,6 +66,7 @@ function setCellValue(sheetId, row, col, val, isError) {
     cell.setBackground('white').setFontColor('black')
   }
   
+  cell.setFontWeight('normal')
   cell.setValue(val);
 }
 
@@ -157,8 +158,7 @@ function getTopicalPrediction(domain, modelId) {
     payload: payload,
     headers: {
       'Authorization': getAuthorization(),
-      'content-type': 'application/json',
-      'User-Agent': 'MadKudu Sheets'
+      'content-type': 'application/json'
     },
     muteHttpExceptions: true // use this to be able to catch the status of the error
   };
@@ -183,8 +183,7 @@ function getCustomerFitPrediction(domainOrEmail, model) {
   const params = {
     method: 'get',
     headers: {
-      'Authorization': getAuthorization(),
-      'User-Agent': 'MadKudu Sheets'
+      'Authorization': getAuthorization()
     },
     muteHttpExceptions: true, // use this to be able to catch the status of the error
   };

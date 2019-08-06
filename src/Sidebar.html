@@ -487,8 +487,8 @@
               batch.push({ row, col: selection.column + 3, val: mainTopic.name })
               batch.push({ row, col: selection.column + 4, val: mainTopic.confidence })
             } else if (prediction.error) {
-              batch.push({ row, col: selection.column + 3, val: 'Error - ' + prediction.status + ' ' + result.prediction.message })
-              batch.push({ row, col: selection.column + 4, val: 'Error - ' + prediction.status + ' ' + result.prediction.message })
+              batch.push({ row, col: selection.column + 3, val: result.prediction.message })
+              batch.push({ row, col: selection.column + 4, val: result.prediction.message })
             } else {
               // if the results do not contain main_topic, print "null"
               batch.push({ row, col: selection.column + 3, val: 'null' })
@@ -534,8 +534,8 @@
             batch.push({ row, col: selection.column + 2, val: customerFit.score })
             batch.push({ row, col: selection.column + 3, val: customerFit.top_signals_formatted })
           } else if (res.error) {
-            batch.push({ row, col: selection.column + 1, val: 'Error - ' + res.status + ' ' + res.message })
-            batch.push({ row, col: selection.column + 2, val: 'Error - ' + res.status + ' ' + res.message })
+            batch.push({ row, col: selection.column + 1, val: res.message })
+            batch.push({ row, col: selection.column + 2, val: res.message })
           }
           await run('setCells', app.activeSheet, batch, !!res.error)
           app.currentAmountLoaded += 1
