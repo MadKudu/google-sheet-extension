@@ -151,7 +151,7 @@
             {{ tab }}
           </div>
         </nav>
-        <div class="freemium-label">
+        <div class="freemium-label" v-if="!isPayingCustomer">
           <p class="freemium-label-text">You are currently using a free model to score your leads. <a href="https://www.madkudu.com/contact-us?ref=googlesheet" target="_blank">Contact us</a> to personalize your experience and improve your results!</p>
         </div>
         
@@ -319,7 +319,8 @@
           activeSheet: null,
           isError: false,
           readyToPredict: false,
-          passedAccountPage: false
+          passedAccountPage: false,
+          isPayingCustomer: false
         }
       });
       
@@ -417,6 +418,7 @@
         // make sure the apikey is still valid
         if (app.apiKey) {
           app.models = models
+          app.isPayingCustomer = models.find(model => model.type === 'customer_fit')
           const hasTopicalModels = models.find(model => model.type === 'topical')
           if (models.length && hasTopicalModels && !app.tabs.includes('Topical')) {
             app.tabs.push('Topical')
